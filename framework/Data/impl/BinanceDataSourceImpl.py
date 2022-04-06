@@ -73,11 +73,21 @@ class BinanceDataSourceImpl(DataSource):
     def getName(self) -> string:
         return "Binance"
     
-    def buy(self):
-        print("buy() : %s" % self.getName())
+    def buy(self, quantities):
+        limitBuyResult0 = self.clientCcxt.create_limit_buy_order(self.coinName[0], quantities, self.bid[0])
+        print("Buy : coin 0 - limitBuyResult0: ",limitBuyResult0)
+        #print("buy() : %s" % self.getName())
 
-    def sell(self):
-        print("sell() : %s" % self.getName())
+    def sell(self, quantities):
+        limitSellResult1 = self.clientCcxt.create_limit_sell_order(self.coinName[1], quantities, self.ask[1])
+        print("Buy : coin 1 - limitSellResult1: ",limitSellResult1)
+        #print("sell() : %s" % self.getName())
+
+    def getBalance(self):
+        return self.clientCcxt.fetch_balance()
+        
+    def getTickerName(self, tickerNum):
+        return self.coinName[tickerNum]
 
     def getCandleDataFrame(self, tickerNum):
         return self.g_CandleDF[tickerNum]
@@ -139,7 +149,7 @@ class BinanceDataSourceImpl(DataSource):
                         self.bid[i] = data['data']['b']
                         self.ask[i] = data['data']['a']
 
-                        self.notifyOnDataReceived(self.bid[i])
+                        self.notifyOnDataReceived(i, self.bid[i])
             elif 'continuousKline' in data['stream']:
                 if data['data']['k']['x']:
                     for i in range(self.tickerMaxNum):
