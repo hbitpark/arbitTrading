@@ -10,3 +10,4 @@ FIRST_TICKER = 0
 SECOND_TICKER = 1
 
 ''' Variable '''
+DRAW_GRAPH = False

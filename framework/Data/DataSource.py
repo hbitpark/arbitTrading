@@ -3,7 +3,7 @@ import string
 
 class DataSourceListener(metaclass=ABCMeta):
     @abstractmethod
-    def onDataReceived(self, dataSource: 'DataSource', price: int):
+    def onDataReceived(self, tickerNum, price: int):
         pass
 
     def onConnected(self, dataSource: 'DataSource'):
@@ -23,11 +23,11 @@ class DataSource(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def buy(self):
+    def buy(self, tickerNum):
         pass
 
     @abstractmethod
-    def sell(self):
+    def sell(self, tickerNum):
         pass
 
     # @abstractmethod
@@ -35,7 +35,7 @@ class DataSource(metaclass=ABCMeta):
     #     pass
 
     @abstractmethod
-    def getCoinPrice(self):
+    def getCoinPrice(self, tickerNum):
         pass
 
     @abstractmethod
@@ -67,10 +67,10 @@ class DataSource(metaclass=ABCMeta):
     def removeAllLiteners(self, listener: DataSourceListener):
         self.listeners.clear()
 
-    def notifyOnDataReceived(self, price: int):
+    def notifyOnDataReceived(self, tickerNum, price: int):
         #print("notifyOnDataReceived():  %s" % self.getName())
         for listener in self.listeners:
-            listener.onDataReceived(self, price)
+            listener.onDataReceived(tickerNum, price)
 
     def notifyOnConnected(self):
         for listener in self.listeners:

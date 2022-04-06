@@ -3,15 +3,15 @@ from framework.Data.DataSource import DataSource, DataSourceListener
 
 class StrategyListener(metaclass=ABCMeta):
     @abstractmethod
-    def onDataChanged(self, price: int):
+    def onDataChanged(self, tickerNum, price: int):
         pass
 
     @abstractmethod
-    def requestBuyAnswer(self, price: int) -> bool:
+    def requestBuyAnswer(self, tickerNum, price: int) -> bool:
         pass
 
     @abstractmethod
-    def requestSellAnswer(self, price: int) -> bool:
+    def requestSellAnswer(self, tickerNum, price: int) -> bool:
         pass
 
 class Strategy(DataSourceListener):
@@ -35,34 +35,43 @@ class Strategy(DataSourceListener):
         for dataSource in self.dataSources:
             self.removeDataSource(dataSource)
 
-    def onDataReceived(self, dataSource: DataSource, price: int):
+    def onDataReceived(self, tickerNum, price: int):
         #print("onDataReceived() : Strategy")
         if self.listener == None:
             return
 
-        self.listener.onDataChanged(price)
+        self.listener.onDataChanged(tickerNum, price)
+        self.preCalc()
 
-        if self.shouldBuy():
-            if self.listener.requestBuyDisplay(price):
-                self.orderBuy()
-        elif self.shouldSell():
-            if self.listener.requestSellDisplay(price):
-                self.orderSell()
+        if self.shouldBuy(tickerNum):
+            if self.listener.requestBuyDisplay(tickerNum, price):
+                self.orderBuy(tickerNum)
+        elif self.shouldSell(tickerNum):
+            if self.listener.requestSellDisplay(tickerNum, price):
+                self.orderSell(tickerNum)
 
     @abstractmethod
-    def shouldBuy(self):
+    def preCalc(self):
         pass
 
     @abstractmethod
-    def shouldSell(self):
+    def shouldBuy(self, tickerNum):
         pass
 
     @abstractmethod
-    def orderBuy(self):
+    def shouldBuy(self, tickerNum):
         pass
 
     @abstractmethod
-    def orderSell(self):
+    def shouldSell(self, tickerNum):
+        pass
+
+    @abstractmethod
+    def orderBuy(self, tickerNum):
+        pass
+
+    @abstractmethod
+    def orderSell(self, tickerNum):
         pass
 
     @abstractmethod

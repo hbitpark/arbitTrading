@@ -23,6 +23,7 @@ def main() -> None:
         BinanceDataSourceImpl(FileKeyStore("./binance_ticker.txt"), ['BTCBUSD','ETHBUSD'], '1m'))
 
     ConsoleView: View = ConsoleViewImpl()
+    #QTview: View = QTviewImpl()
 
     sampleStrategy.setListener(ConsoleView)
     sampleStrategy.start()

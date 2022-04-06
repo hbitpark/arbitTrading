@@ -3,37 +3,37 @@ import os
 from framework.view.View import View
 
 class ConsoleViewImpl(View):
-    def onDataChanged(self, price: float):
-        self.displayPrice(price)
+    def onDataChanged(self, tickerNum, price: float):
+        self.displayPrice(tickerNum, price)
         pass
 
-    def requestBuyDisplay(self, price: float) -> bool:
-        self.displayPrice(price)
+    def requestBuyDisplay(self, tickerNum, price: float) -> bool:
+        #self.displayPrice(tickerNum, price)
         print("buy order")
         return True
 
-    def requestSellDisplay(self, price: float) -> bool:
-        self.displayPrice(price)
+    def requestSellDisplay(self, tickerNum, price: float) -> bool:
+        #self.displayPrice(tickerNum, price)
         print("sell order")
         return True
 
-    def requestBuyAnswer(self, price: float) -> bool:
-        self.displayPrice(price)
+    def requestBuyAnswer(self, tickerNum, price: float) -> bool:
+        self.displayPrice(tickerNum, price)
         result = input("Buy? [y/n] ")
         print("")
 
         return result == "y" or result == "Y"
 
-    def requestSellAnswer(self, price: float) -> bool:
-        self.displayPrice(price)
+    def requestSellAnswer(self, tickerNum, price: float) -> bool:
+        self.displayPrice(tickerNum, price)
         result = input("Sell? [y/n] ")
         print("")
         return result == "y" or result == "Y"
 
-    def displayPrice(self, symbol, price: float):
+    def displayPrice(self, tickerNum, price: float):
         #self.__clearConsole()
         print("")
-        print("[View]:--------------------")
+        print("[View]:-------------------tk: ",tickerNum)
         print(f"[View]: Currect price : {price}")
         print("[View]:--------------------")
 
