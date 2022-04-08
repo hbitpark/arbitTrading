@@ -14,19 +14,17 @@ from framework.Strategy.impl.SpreadStrategyImpl import SpreadStrategyImpl
 
 
 def main() -> None:
-    """프로그램 메인
-    """
 
     #static.chart.start()
 
-    sampleStrategy: Strategy = SpreadStrategyImpl(
+    spreadStrategy: Strategy = SpreadStrategyImpl(
         BinanceDataSourceImpl(FileKeyStore("./binance_ticker.txt"), ['BTCBUSD','ETHBUSD'], '1m'))
 
     ConsoleView: View = ConsoleViewImpl()
     #QTview: View = QTviewImpl()
 
-    sampleStrategy.setListener(ConsoleView)
-    sampleStrategy.start()
+    spreadStrategy.setListener(ConsoleView)
+    spreadStrategy.start()
 
 if __name__ == '__main__':
     main()

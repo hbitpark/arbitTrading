@@ -87,3 +87,45 @@ def scrape_candles_to_return(exchange_id, max_retries, symbol, timeframe, since,
     # save them to csv file
     print('Saved', len(ohlcv), 'candles from', exchange.iso8601(ohlcv[0][0]), 'to', exchange.iso8601(ohlcv[-1][0]))
     return ohlcv
+
+def calcSpreadCandle(g_CandleDF):
+    logCoin0 = np.log(g_CandleDF[0]['close'])
+    logCoin1 = np.log(g_CandleDF[1]['close'])
+    covCoinTwo = logCoin0.cov(logCoin1)
+    variance1 = np.var(logCoin1)
+    coeffi = covCoinTwo/variance1
+
+    return calcSpread(g_CandleDF[0], g_CandleDF[1], coeffi)
+
+def calcSpread(coin0, coin1, coEffi):
+    logCoin0 = np.log(coin0)
+    logCoin1 = np.log(coin1)
+    logSpread = (logCoin0/(coEffi*logCoin1))
+    logSpreadAvg = np.average(logSpread)
+    return (logSpread - logSpreadAvg)*100
+
+def scrape_SpreadCandlesTwoSymbol_to_csv(filename, exchange_id, max_retries, symbol0, symbol1, timeframe, since, limit):
+    # instantiate the exchange by id
+    exchange = getattr(ccxt, exchange_id)({
+        'enableRateLimit': True,  # required by the Manual
+    })
+    # convert since from string to milliseconds integer if needed
+    if isinstance(since, str):
+        since = exchange.parse8601(since)
+    # preload all markets from the exchange
+    exchange.load_markets()
+    # fetch all candles
+    ohlcv0 = scrape_ohlcv(exchange, max_retries, symbol0, timeframe, since, limit)
+    ohlcv1 = scrape_ohlcv(exchange, max_retries, symbol1, timeframe, since, limit)
+
+    g_CandleDF = []
+    g_CandleDF.append(pd.DataFrame(ohlcv0, columns=['datetime', 'open', 'high', 'low', 'close', 'volume']))
+    g_CandleDF.append(pd.DataFrame(ohlcv1, columns=['datetime', 'open', 'high', 'low', 'close', 'volume']))
+    ohlcv = calcSpreadCandle(g_CandleDF)
+    ohlcv['datetime'] = g_CandleDF[0]['datetime']
+    ohlcv['volume'] = g_CandleDF[0]['volume']
+    ohlcv_list = ohlcv.values
+
+    # save them to csv file
+    write_to_csv(filename, exchange, ohlcv_list)
+    print('Saved', len(ohlcv_list), 'candles from', exchange.iso8601(ohlcv_list[0][0]), 'to', exchange.iso8601(ohlcv_list[-1][0]), 'to', filename)

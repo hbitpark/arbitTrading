@@ -74,9 +74,16 @@ class SpreadStrategyImpl(Strategy):
         print("spread diff: ",spread_diff[len(spread_diff)-1], " /coinPercent: ",coinPercent, " /오더 퍼센트: ",calcedCoinPercent, " %")
         print("단계 : ",step)
         return calcedCoinPercent
+    
+    def adaptAI(self, spdDiff):
+        self.regression(spdDiff)
+        self.knn(spdDiff)
 
     def calcCoinQuantities(self):
         coeffi, spreadDiff = self.preCalc()
+
+        #spreadDiffAfterAI = self.adaptAI(spreadDiff)
+
         percent = self.calcCoinPercent(spreadDiff)
         balance = self.binance.getBalance()
 
