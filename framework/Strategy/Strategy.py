@@ -41,14 +41,13 @@ class Strategy(DataSourceListener):
             return
 
         self.listener.onDataChanged(tickerNum, price)
-        self.preCalc()
 
         if self.shouldBuy(tickerNum):
             if self.listener.requestBuyDisplay(tickerNum, price):
                 self.orderBuy(tickerNum)
-        elif self.shouldSell(tickerNum):
-            if self.listener.requestSellDisplay(tickerNum, price):
-                self.orderSell(tickerNum)
+        #elif self.shouldSell(tickerNum):
+        #    if self.listener.requestSellDisplay(tickerNum, price):
+        #        self.orderSell(tickerNum)
 
     @abstractmethod
     def preCalc(self):

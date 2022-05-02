@@ -1,5 +1,7 @@
 ''' Constant '''
 
+MAX_COIN_NUM = 2
+
 MAX_COIN_DATA = 1000
 
 ORDER_STATE_NOMAL = 0
@@ -9,5 +11,13 @@ ORDER_STATE_SELL = 2
 FIRST_TICKER = 0
 SECOND_TICKER = 1
 
+DIGITS_COIN_NUM0 = 3 # 코인갯수의 소수점 자리
+DIGITS_COIN_NUM1 = 3
+
+START_BALANCE_FREE = 3000 # 시작 밸런스
+
 ''' Variable '''
 DRAW_GRAPH = False
+
+DIFF_STEP = 0.2 # log spread 주문 단계
+COIN_NUM_PERCENT_STEP = 10 # 주문 단계정 주문 갯수 퍼센트

@@ -4,8 +4,9 @@ import static
 import numpy as np
 import cufflinks as cf
 import pandas as pd
+import time
 
-class SpreadStrategyImpl(Strategy):
+class SpreadMmStrategyImpl(Strategy):
     def __init__(self, binance: DataSource) -> None:
         super().__init__()
 
@@ -19,10 +20,18 @@ class SpreadStrategyImpl(Strategy):
         candleDF1 = self.binance.getCandleDataFrame(static.SECOND_TICKER)
         coin0_close = candleDF0['close']
         coin1_close = candleDF1['close']
+        #print("coin0_close: ",coin0_close)
+        #print("coin1_close: ",coin1_close)
 
-        coin0_close[len(coin0_close)] = self.binance.getBidPrice(static.FIRST_TICKER)
-        coin1_close[len(coin1_close)] = self.binance.getBidPrice(static.SECOND_TICKER)
+        bid0 = self.binance.getCoinPrice(static.FIRST_TICKER)
+        bid1 = self.binance.getCoinPrice(static.SECOND_TICKER)
+        
+        #print("try getBid0: ",bid0," /bid1: ",bid1)
 
+        leng = len(coin0_close)
+        coin0_close[leng] = bid0
+        coin1_close[leng] = bid1
+        
         # to log
         logCoin0 = np.log(coin0_close)
         logCoin1 = np.log(coin1_close)
@@ -89,12 +98,14 @@ class SpreadStrategyImpl(Strategy):
                             ,yTitle='diff',title='스프레드 변화')
     def calcCoinPercent(self, spread_diff) -> float:
         # spread diff step 당 coinNumPercent
-        coinPercent = spread_diff[len(spread_diff)-1]/self.diffStep * self.coinNumPercentStep # 수량 퍼센트로
-        step = int(coinPercent/self.coinNumPercentStep)
-        calcedCoinPercent = step * self.coinNumPercentStep
-        print("---------------------------------------")
-        print("spread diff: ",spread_diff[len(spread_diff)-1], " /coinPercent: ",coinPercent, " /오더 퍼센트: ",calcedCoinPercent, " %")
-        print("단계 : ",step)
+        #print("spread_diff: ",spread_diff," /spread_diff[len(spread_diff)-1]: ",spread_diff[len(spread_diff)-1])
+        #print("static.DIFF_STEP: ",static.DIFF_STEP, " /static.COIN_NUM_PERCENT_STEP: ",static.COIN_NUM_PERCENT_STEP)
+        coinPercent = spread_diff[len(spread_diff)-1]/static.DIFF_STEP * static.COIN_NUM_PERCENT_STEP # 수량 퍼센트로
+        step = int(coinPercent/static.COIN_NUM_PERCENT_STEP)
+        calcedCoinPercent = step * static.COIN_NUM_PERCENT_STEP
+        #print("---------------------------------------")
+        #print("spread diff: ",spread_diff[len(spread_diff)-1], " /coinPercent: ",coinPercent, " /오더 퍼센트: ",calcedCoinPercent, " %")
+        #print("단계 : ",step)
         return calcedCoinPercent
     
     def adaptAI(self, spdDiff):
@@ -106,32 +117,35 @@ class SpreadStrategyImpl(Strategy):
 
         percent = self.calcCoinPercent(spreadDiff)
 
-        balance_free = ""
-        if balance_free != "":
-            fBalance_free = round(float(balance_free),1)
+        if static.START_BALANCE_FREE != "":
+            fBalance_free = round(float(static.START_BALANCE_FREE),1)
             ratio1 = round(float(percent),1)
-            orderCount0 = (fBalance_free/float(self.ask[0]))*(ratio1/100)
-            orderCount1 = (fBalance_free/float(self.ask[1]))*(ratio1/100)
+            orderCount0 = (fBalance_free/float(self.binance.bid[0]))*(ratio1/100)
+            orderCount1 = (fBalance_free/float(self.binance.bid[1]))*(ratio1/100)
 
         orderCount0 = abs(round(orderCount0, static.DIGITS_COIN_NUM0))
         orderCount1 = abs(round(orderCount1 * coeffi, static.DIGITS_COIN_NUM1))
 
         return orderCount0, orderCount1
 
-    def verifyOrderStateBuy(self):
+    def verifyOrderStateBuy(self, orderCnt0, orderCnt1):
         #spreadDiffAfterAI = self.adaptAI(spreadDiff)
         
-        balance = self.binance.getBalance()
-        nowCoinNum0 = self.getCoinNumber(balance, self.coinName[0])
-        nowCoinNum1 = self.getCoinNumber(balance, self.coinName[1])
+        #balance = self.binance.getBalance()
+        #nowCoinNum0 = self.getCoinNumber(balance, self.coinName[0])
+        #nowCoinNum1 = self.getCoinNumber(balance, self.coinName[1])
+        return False
+
+    def verifyOrderStateSell(self, orderCnt0, orderCnt1):
+        return False
 
     def shouldBuy(self, tickerNum): # buy 조건
-        self.calcCoinQuantities()
-        return self.verifyOrderStateBuy()
+        orderCnt0, orderCnt1 = self.calcCoinQuantities()
+        return self.verifyOrderStateBuy(orderCnt0, orderCnt1)
 
     def shouldSell(self, tickerNum): # sell 조건
-        self.calcCoinQuantities()
-        return self.verifyOrderStateSell()
+        orderCnt0, orderCnt1 = self.calcCoinQuantities()
+        return self.verifyOrderStateSell(orderCnt0, orderCnt1)
 
     def orderBuy(self, tickerNum):
         self.binance.buy(tickerNum)

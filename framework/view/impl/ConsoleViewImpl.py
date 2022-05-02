@@ -32,10 +32,10 @@ class ConsoleViewImpl(View):
 
     def displayPrice(self, tickerNum, price: float):
         #self.__clearConsole()
-        print("")
-        print("[View]:-------------------tk: ",tickerNum)
-        print(f"[View]: Currect price : {price}")
-        print("[View]:--------------------")
+        #print("-", end=' ')
+        #print("[View]:-------------------tk: ",tickerNum)
+        print(f"[View]: Currect price : {price} / ticker Num: {tickerNum}")
+        #print("[View]:--------------------")
 
     def __clearConsole(self):
         command = 'clear'
