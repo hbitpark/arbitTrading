@@ -19,25 +19,96 @@ class OrderInfo():
         self.tickerNum = tickerNum
         self.pendingOrder =  []
         self.openOrder  = []
+        self.openOrderBuy  = []
+        self.openOrderSell  = []
 
         self.initPendingOrder(ccxtClient)
+        self.initOpenOrder(ccxtClient)
     
     def initPendingOrder(self, ccxtclient):
         orderStream = ccxtclient.fetch_open_orders(symbol=self.tickerName)
-        self.pendingOrder = pd.DataFrame(columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price'])
+        self.pendingOrder  = pd.DataFrame(columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price'])
 
         for i in range(len(orderStream)):
             orderData = orderStream[i]
             orderinfo = [orderData['info']['time'], orderData['side'], orderData['info']['symbol'], orderData['info']['orderId'], 
                          orderData['info']['status'], orderData['info']['origQty'], orderData['info']['executedQty'], orderData['info']['price']]
-
             #self.pendingOrder.append(pd.DataFrame(orderinfo))
-            self.pendingOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
-                columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)
+            if orderData['info']['status']=='OPEN':
+                
+                self.openOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
+                    columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)    
+            elif orderData['info']['status']=='NEW':
+                self.pendingOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
+                    columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)
+
+    def initOpenOrder(self, ccxtclient):
+        balance = ccxtclient.fetch_balance()
+        orderStream = balance['info']['positions']
+        for position in orderStream:
+            if position["symbol"] == self.tickerName:
+                print("open oder: ")
+                print(position)
+
+        self.openOrder  = pd.DataFrame(columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price'])
+        self.openOrderBuy  = pd.DataFrame(columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price'])
+        self.openOrderSell = pd.DataFrame(columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price'])
+        """
+        for i in range(len(orderStream)):
+            orderData = orderStream[i]
+            orderinfo = [orderData['info']['time'], orderData['side'], orderData['info']['symbol'], orderData['info']['orderId'], 
+                         orderData['info']['status'], orderData['info']['origQty'], orderData['info']['executedQty'], orderData['info']['price']]
+            #self.pendingOrder.append(pd.DataFrame(orderinfo))
+            if orderData['info']['status']=='OPEN':
+                self.openOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
+                    columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)    
+        """
+
+    def addNewPendingOrder(self, orderData):
+        orderinfo = [orderData['T'], orderData['o']['S'], orderData['o']['s'], orderData['o']['i'], 
+                         orderData['o']['X'], orderData['o']['q'], orderData['o']['z'], orderData['o']['p']]
+
+        self.pendingOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
+            columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)
+
+    def delCanclePendigOrder(self, orderData):
+        for i in range(len(self.pendingOrder)):
+            if orderData['o']['i']==int(self.pendingOrder.iloc[i]['id']):
+                    self.pendingOrder.drop(i, inplace=True) # del self.pendingOrder row
+                    self.pendingOrder.reset_index(drop=True,inplace=True)
+                    return
+
+    def delPendigOrder(self, orderData):
+        for i in range(len(self.pendingOrder)):
+            if orderData['o']['i']==int(self.pendingOrder.iloc[i]['id']):
+                if orderData['o']['z']==self.pendingOrder.iloc[i]['origin_qty']:
+                    self.pendingOrder.drop(i, inplace=True) # del self.pendingOrder row
+                    self.pendingOrder.reset_index(drop=True,inplace=True)
+                    return
 
     def displayPendingOrder(self):
-        print("pending orders1: \n",self.pendingOrder)
-        print("pending orders0: \n",self.pendingOrder[0])
+        if len(self.pendingOrder) > 0:
+            print("pending orders: \n",self.pendingOrder)
+            print("--------------------------------------")
+            #print("pending orders0: \n",self.pendingOrder.iloc[0:2])
+
+    def displayOpenOrder(self):
+        if len(self.openOrder) > 0:
+            print("open orders : \n",self.openOrder)
+            print("--------------------------------------")
+            #print("pending orders0: \n",self.pendingOrder.iloc[0:2])
+
+    def addNewOpenOrder(self, orderData):
+        orderinfo = [orderData['T'], orderData['o']['S'], orderData['o']['s'], orderData['o']['i'], 
+                         orderData['o']['X'], orderData['o']['q'], orderData['o']['z'], orderData['o']['p']]
+
+        self.pendingOrder = self.pendingOrder.append(pd.DataFrame([orderinfo], 
+            columns=['datetime', 'side', 'symbol', 'id', 'status', 'origin_qty','exec_qty', 'price']), ignore_index=True)
+import atexit
+
+@atexit.register
+def goodbye():
+    print('You are now leaving the Python sector.')
 
 class BinanceDataSourceImpl(DataSource):
     def __init__(self, FileKeyStore, tickerList, candlePeriod) -> None:
@@ -52,6 +123,7 @@ class BinanceDataSourceImpl(DataSource):
 
         self.pendingOrders = OrderInfo(self.coinName[0], 0, self.clientCcxt)
         self.pendingOrders.displayPendingOrder()
+        self.pendingOrders.displayOpenOrder()
 
         self.candlePeriod = candlePeriod
         self.ask = [0, 0, 0]
@@ -201,12 +273,19 @@ class BinanceDataSourceImpl(DataSource):
             if not self.queueUser.empty():
                 dataUser = self.queueUser.get()
                 if dataUser:
-                    if 'ORDER_TRADE_UPDATE' in data['e']:
-                        if dataUser['o']['X']=='NEW' and dataUser['o']['S']=='BUY':
-                            print("dataUser: ",dataUser)
-                            print("--------------------------------------")
-                
-    
+                    if 'ORDER_TRADE_UPDATE' in dataUser['e']:
+                        print("-: ",dataUser)
+                        print("--------------------------------------")
+                        if dataUser['o']['X']=='NEW':
+                            self.pendingOrders.addNewPendingOrder(dataUser)
+                            self.pendingOrders.displayPendingOrder()
+                        elif dataUser['o']['X']=='CANCELED':
+                            self.pendingOrders.delCanclePendigOrder(dataUser)
+                            self.pendingOrders.displayPendingOrder()
+                        elif dataUser['o']['X']=='FILLED':
+                            self.pendingOrders.delPendigOrder(dataUser)
+                            self.pendingOrders.displayPendingOrder()
+
     def connectBinance(self):
         myLoop = asyncio.get_event_loop()
         myLoop.run_until_complete(asyncio.gather(

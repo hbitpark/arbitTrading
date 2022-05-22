@@ -4,7 +4,7 @@ from framework.view.View import View
 
 class ConsoleViewImpl(View):
     def onDataChanged(self, tickerNum, price: float):
-        self.displayPrice(tickerNum, price)
+        #self.displayPrice(tickerNum, price)
         pass
 
     def requestBuyDisplay(self, tickerNum, price: float) -> bool:
